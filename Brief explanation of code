@@ -1,0 +1,35 @@
+Perception
+==========
+
+Reading an invented binary code using opencv
+El objetivo de este trabajo era la identificación y lectura de un código similar al código Qr utilizando opencv. Además, se buscaba encontrar la manera más rápida de hacerlo ya que el objetivo era hacerlo con una cámara a tiempo real de manera que habría que analizar todo lo visto durante el curso y tratar de aplicarlo de una manera optimizada para el objetivo que habíamos planteado.
+Al querer leer códigos en tiempo real, se ha pretendido que el programa sea lo mas rápido posible evitando operaciones redundantes e incluso llegando a diseñar nuestros propios sistemas de detección de patrones mas eficientes para el caso que la correlacion, asi como filtros optimizados. Ademas se ha intentado usar lo menos posible cálculos complejos y números flotantes, estando la mayor parte del código implementado con números enteros.
+
+Diseño del código:
+Antes de poder comenzar a implementar el trabajo como tal lo primero que se hizo fue el diseño del código que posteriormente se trata de identificar y leer. En esta parte, decidimos que la forma del diseño sería cuadrada y tendría un patrón fijo en dos de sus lados y en una esquina. Ese patrón fijo es el que se utilizaría más tarde para ver si un cuadrado detectado era código o no.
+Se decidió que para este código se podrían leer 47 caracteres diferentes en el orden que se muestra en la imagen. Como se puede ver tendremos 3 tipos de distribuciones diferentes para los caracteres, de manera que, como ya se verá posteriormente, habrá que implementar métodos distintos para leerlos. Cada carácter estará definido por 6 pixeles distintos que podrán ser blancos o negros es decir se les asociará un valor booleano de 0 o 1 respectivamente dependiendo del color. De esta forma, cada 6 pixeles se tendrá un número binario que estará asociado a un determinado carácter
+Como ya se explicará más adelante con 6 valores binarios podemos tener hasta 64 caracteres (26)
+
+Pre procesamiento:
+Para el pre procesamiento de imágenes se han realizado varias umbralizaciones de manera que la imagen sea más nítida y el cálculo tanto de las dimensiones de los lados del cuadrado que forma el código como los cuadrados de su interior sean más exactos. Además, se utiliza una binarización con el objetivo de poder, una vez detectado un cuadrado, determinar si éste es código o no y en caso de ser así, no tener problemas a la hora de leerlo.
+
+Detección de cuadrados:
+Para la detección de cuadrados hace falta explicar varios métodos.
+El primero es una detección de bordes en la que se buscan bordes que tengan cuatro puntos de cambio o esquinas. Como a utilizando este método se podría detectar también tanto rombos, como rectángulos o cualquier otro tipo de cuadrilátero irregular a parte de los cuadrados que se buscan, se decidió implementar una función con la que se pudiera comprobar si los cuatro puntos que se detectan son los vértices de un cuadrado.
+Para este método hizo falta tratar con la distancia entre los puntos de manera que se hiciera posible trabajar con longitudes. Una vez creada la función de calcular distancias, se sabe que de 3 que tenemos, dos tienen que ser los lados del cuadrado, es decir, tienen que ser igual de largas; así como la tercera debe ser la diagonal, es decir medir el lado multiplicado por √2.
+Se creó una estructura que se utiliza para almacenar todos los cuadrados que se detecten, de manera que después de haberlos guardado todos, se puedan comparar fácilmente utilizando alguna de sus características. Nosotros decidimos utilizar la diagonal para ver cuál era el cuadrado más grande, que es por el que comenzaríamos a analizar si es código o no. Es por eso que en el diseño del código se tuvo en cuenta el hacer un borde negro cuadrado en la parte exterior con el objetivo de facilitar la lectura.
+
+Giro y corte de un posible código:
+Una vez determinado el cuadrado de mayor tamaño hay que determinar si está recto, o por el contrario, es necesario girar la imagen que tenemos para poder analizar su interior.
+Para ello, se calculó el ángulo utilizando dos puntos. Basándonos en trigonometría, el ángulo se pudo calcular con la inversa de la tangente. Si el ángulo obtenido no era 0, se procedió a girar la imagen para lo cual hace falta, la imagen que se quiere girar, el punto sobre el que se gira (centro del cuadrado) y el ángulo.
+Una vez girada la imagen, se recorta y almacena el cuadrado más grande detectado en una nueva imagen a la que se le pasa punto por punto lo que se quiere estudiar.
+
+Identificar si es código;
+Con el objetivo de simplificar la identificación del código hay varias cosas a tener en cuenta. La primera de ellas y más importante, hay que decir que esta parte se podría haber hecho utilizando correlación y teniendo como imagen a buscar las partes del cuadrado que establecen que sea código, es decir el cuadrado de la esquina y los dos lados con pixeles alternativos.
+En vez de este método se implementó uno creado por nosotros con el objetivo de acelerar los cálculos y el estudio en general de manera que en nuestra función solo se analizan los pixeles que son significativos en nuestra imagen y no todos como habría ocurrido en caso de usar la correlación.
+La segunda simplificación que se utilizo fue un redimensionamiento de la imagen anteriormente recortada de manera que el cuadrado quedara con unas dimensiones previamente escogidas.
+En nuestro método, se establece que es código si, y solo si, todos los puntos centrales del cada cuadrado de los dos lados (izquierdo y superior) coincide con el nivel de gris apropiado (ya sea blanco o negro). Y Además coinciden el cuadrado negro de la esquina y los bordes blancos. Si ese es el caso, la función devuelve un true.
+
+Lectura del mismo:
+Para leer el código hizo falta implementar 3 partes distintas. Una de ellas para los caracteres que van del 0 al 39, otro para los que van del 40 al 44 y un último para el 45 y 46.
+En todos ellos se establece un orden de lectura de los píxeles, como se puede ver en la fotografía inferior. Este orden determina el peso de cada valor binario dentro del número. Una vez determinado el número en binario ya solo resta establecer una relación entre el valor obtenido y el carácter tal y como se muestra en la tabla del anexo.
